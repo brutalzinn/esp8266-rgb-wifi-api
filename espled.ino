@@ -24,14 +24,6 @@ NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart1800KbpsMethod> strip(PixelCount, Pixel
 
 RgbColor black(0);
 
-const int led = 2;
-const int redPin   = 5;        // choose the pin for each of the LEDs
-const int greenPin = 4;
-const int bluePin  = 14;
-const boolean invert = false; // set true if common anode, false if common cathodeint color = 0; // a value from 0 to 255 representing the hue
-int color = 255;
-int R, G, B;  // the Red Green and Blue color components
-
 const int freq = 5000;
 const int resolution = 8;
 
@@ -86,14 +78,15 @@ void handleRoot() {                         // When URI / is requested, send a w
   server.send(200, "text/html", "<form action=\"/LED\" method=\"POST\"><input type=\"submit\" value=\"Toggle LED\"></form>");
 }
 
-void setColor(){
+void setColor(int R, int G, int B)
+{
  
  for (int i = 0; i <= 15; i++)
   {
     RgbColor varios(R, G, B);
     strip.SetPixelColor(i, varios);
     strip.Show();
-    delay(10);
+    delay(1);
   }
 }
 
@@ -103,7 +96,7 @@ for (int i = 0; i <= 15; i++)
   {
     strip.SetPixelColor(i, black);
     strip.Show();
-    delay(10);
+    delay(1);
   }
 }
 void handleLED() {   
@@ -118,8 +111,11 @@ if (error) {
 
 serializeJson(doc, Serial);
 
-hueToRGB(doc["hue"], doc["sat"]);
-setColor();
+int R = doc["red"]; 
+int G = doc["green"];
+int B = doc["blue"];
+
+setColor(R, G , B);
 
 server.send(200, "application/json", "{\"success\":true}" );
   
@@ -127,59 +123,4 @@ server.send(200, "application/json", "{\"success\":true}" );
 
 void handleNotFound(){
   server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
-}
-
-void hueToRGB( int hue, int brightness)
-{
-unsigned int scaledHue = (hue * 6);
-unsigned int segment = scaledHue / 256; // segment 0 to 5 around the
-// color wheel
-unsigned int segmentOffset =
-scaledHue - (segment * 256); // position within the segment
-
-unsigned int complement = 0;
-unsigned int prev = (brightness * ( 255 - segmentOffset)) / 256;
-unsigned int next = (brightness *  segmentOffset) / 256;
-
-if(invert)
-{
-brightness = 255-brightness;
-complement = 255;
-prev = 255-prev;
-next = 255-next;
-}
-
-switch(segment ) {
-case 0:      // red
-R = brightness;
-G = next;
-B = complement;
-break;
-case 1:     // yellow
-R = prev;
-G = brightness;
-B = complement;
-break;
-case 2:     // green
-R = complement;
-G = brightness;
-B = next;
-break;
-case 3:    // cyan
-R = complement;
-G = prev;
-B = brightness;
-break;
-case 4:    // blue
-R = next;
-G = complement;
-B = brightness;
-break;
-case 5:      // magenta
-default:
-R = brightness;
-G = complement;
-B = prev;
-break;
-}
 }
